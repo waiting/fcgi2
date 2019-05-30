@@ -27,8 +27,6 @@
 #include <process.h>
 #include <signal.h>
 
-#define DLLAPI  __declspec(dllexport)
-
 #include "fcgimisc.h"
 #include "fcgios.h"
 
@@ -328,7 +326,7 @@ int OS_LibInit(int stdioFds[3])
     wVersion = MAKEWORD(2,0);
     err = WSAStartup( wVersion, &wsaData );
     if (err) {
-        fprintf(stderr, "Error starting Windows Sockets.  Error: %d",
+        fprintf(stderr, "Error starting Windows Sockets.  ERROR: %d",
 		WSAGetLastError());
 	exit(111);
     }
@@ -340,7 +338,7 @@ int OS_LibInit(int stdioFds[3])
 	hIoCompPort = CreateIoCompletionPort (INVALID_HANDLE_VALUE, NULL,
 					      0, 1);
 	if(hIoCompPort == INVALID_HANDLE_VALUE) {
-	    printf("<H2>OS_LibInit Failed CreateIoCompletionPort!  ERROR: %d</H2>\r\n\r\n",
+	    printf("<H2>OS_LibInit Failed CreateIoCompletionPort!  ERROR: %lu</H2>\r\n\r\n",
 	       GetLastError());
 	    return -1;
 	}
@@ -478,7 +476,7 @@ int OS_LibInit(int stdioFds[3])
 	hStdinCompPort = CreateIoCompletionPort (INVALID_HANDLE_VALUE, NULL,
 					      0, 1);
 	if(hStdinCompPort == INVALID_HANDLE_VALUE) {
-	    printf("<H2>OS_LibInit Failed CreateIoCompletionPort: STDIN!  ERROR: %d</H2>\r\n\r\n",
+	    printf("<H2>OS_LibInit Failed CreateIoCompletionPort: STDIN!  ERROR: %lu</H2>\r\n\r\n",
 	       GetLastError());
 	    return -1;
 	}
@@ -492,7 +490,7 @@ int OS_LibInit(int stdioFds[3])
        atoi(cLenPtr) > 0) {
         hStdinThread = (HANDLE) _beginthread(StdinThread, 0, NULL);
 	if (hStdinThread == (HANDLE) -1) {
-	    printf("<H2>OS_LibInit Failed to create STDIN thread!  ERROR: %d</H2>\r\n\r\n",
+	    printf("<H2>OS_LibInit Failed to create STDIN thread!  ERROR: %lu</H2>\r\n\r\n",
 		   GetLastError());
 	    return -1;
         }
@@ -1205,11 +1203,12 @@ int OS_AsyncRead(int fd, int offset, void *buf, int len,
     /*
      * Only file offsets should be non-zero, but make sure.
      */
-    if (fdTable[fd].type == FD_FILE_ASYNC)
+    if (fdTable[fd].type == FD_FILE_ASYNC) {
 	if (fdTable[fd].offset >= 0)
 	    pOv->overlapped.Offset = fdTable[fd].offset;
 	else
 	    pOv->overlapped.Offset = offset;
+    }
     pOv->instance = fdTable[fd].instance;
     pOv->procPtr = procPtr;
     pOv->clientData = clientData;
@@ -1281,7 +1280,7 @@ int OS_AsyncWrite(int fd, int offset, void *buf, int len,
     /*
      * Only file offsets should be non-zero, but make sure.
      */
-    if (fdTable[fd].type == FD_FILE_ASYNC)
+    if (fdTable[fd].type == FD_FILE_ASYNC) {
 	/*
 	 * Only file opened via OS_AsyncWrite with
 	 * O_APPEND will have an offset != -1.
@@ -1314,6 +1313,7 @@ int OS_AsyncWrite(int fd, int offset, void *buf, int len,
 	        pOv->overlapped.Offset = fdTable[fd].offset;
 	else
 	    pOv->overlapped.Offset = offset;
+    }
     pOv->instance = fdTable[fd].instance;
     pOv->procPtr = procPtr;
     pOv->clientData = clientData;
@@ -1395,9 +1395,7 @@ int OS_Close(int fd, int shutdown_ok)
 
                 do 
                 {
-#pragma warning( disable : 4127 ) 
 	            FD_SET((unsigned) sock, &rfds);
-#pragma warning( default : 4127 )
                     
 	            tv.tv_sec = 2;
 	            tv.tv_usec = 0;
@@ -1553,7 +1551,7 @@ static int CALLBACK isAddrOKCallback(LPWSABUF  lpCallerId,
     struct sockaddr_in *sockaddr = (struct sockaddr_in *) lpCallerId->buf;
 
     // Touch the args to avoid warnings
-    dc0 = NULL; dc1 = NULL; dc2 = NULL; dc3 = NULL; dc4 = NULL; dc5 = NULL;
+    dc0 = NULL; dc1 = NULL; dc2 = NULL; dc3 = NULL; dc4 = NULL;
 
     if ((void *) data == NULL) return CF_ACCEPT;
 
@@ -1640,14 +1638,12 @@ static int acceptSocket(const char *webServerAddrs)
 
         for (;;)
         {
-            const struct timeval timeout = {1, 0};
+            struct timeval timeout = {1, 0};
             fd_set readfds;
 
             FD_ZERO(&readfds);
 
-#pragma warning( disable : 4127 ) 
             FD_SET((unsigned int) hListen, &readfds);
-#pragma warning( default : 4127 ) 
 
             if (select(0, &readfds, NULL, NULL, &timeout) == 0)
             {

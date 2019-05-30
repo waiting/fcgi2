@@ -40,10 +40,6 @@
 #include <limits.h>
 #endif
 
-#ifdef _WIN32
-#define DLLAPI  __declspec(dllexport)
-#endif
-
 #include "fcgimisc.h"
 #include "fastcgi.h"
 #include "fcgios.h"
@@ -418,8 +414,10 @@ int FCGX_VFPrintF(FCGX_Stream *stream, const char *format, va_list arg)
     int intArg;
     short shortArg;
     long longArg;
+    long long longLongArg;
     unsigned unsignedArg;
     unsigned long uLongArg;
+    unsigned long long uLongLongArg;
     unsigned short uShortArg;
     char *charPtrArg = NULL;
     void *voidPtrArg;
@@ -462,6 +460,16 @@ int FCGX_VFPrintF(FCGX_Stream *stream, const char *format, va_list arg)
                 op = *(percentPtr + 1);
                 switch(op) {
 	            case 'l':
+                        if(op == 'l' && *(percentPtr + 2) == 'l') {
+                            sizeModifier = 'L';
+                            op = *(percentPtr + 3);
+                            fmtBuff[1] = 'l';
+                            fmtBuff[2] = 'l';
+                            fmtBuff[3] = (char) op;
+                            fmtBuff[4] = '\0';
+                            specifierLength = 4;
+                            break;
+                        }
 	            case 'L':
                     case 'h':
                         sizeModifier = op;
@@ -559,6 +567,11 @@ int FCGX_VFPrintF(FCGX_Stream *stream, const char *format, va_list arg)
                  */
                 switch(*p) {
 	            case 'l':
+                        if(*p == 'l' && *(p + 1) == 'l') {
+                            sizeModifier = 'L';
+                            CopyAndAdvance(&fmtBuffPtr, &p, 2);
+                            break;
+                        }
                     case 'L':
                     case 'h':
                         sizeModifier = *p;
@@ -677,6 +690,11 @@ int FCGX_VFPrintF(FCGX_Stream *stream, const char *format, va_list arg)
                             sprintf(buffPtr, fmtBuff, longArg);
                             buffCount = strlen(buffPtr);
                             break;
+                        case 'L':
+                            longLongArg = va_arg(arg, long long);
+                            sprintf(buffPtr, fmtBuff, longLongArg);
+                            buffCount = strlen(buffPtr);
+                            break;
 	                case 'h':
                             shortArg = (short) va_arg(arg, int);
                             sprintf(buffPtr, fmtBuff, shortArg);
@@ -699,6 +717,11 @@ int FCGX_VFPrintF(FCGX_Stream *stream, const char *format, va_list arg)
 	                case 'l':
                             uLongArg = va_arg(arg, unsigned long);
 			    sprintf(buffPtr, fmtBuff, uLongArg);
+                            buffCount = strlen(buffPtr);
+                            break;
+                        case 'L':
+                            uLongLongArg = va_arg(arg, unsigned long long);
+                            sprintf(buffPtr, fmtBuff, uLongLongArg);
                             buffCount = strlen(buffPtr);
                             break;
                         case 'h':
@@ -1465,7 +1488,10 @@ static int ProcessManagementRecord(int type, FCGX_Stream *stream)
         }
         for (pPtr = paramsPtr->vec; pPtr < paramsPtr->cur; pPtr++) {
             name = *pPtr;
-            *(strchr(name, '=')) = '\0';
+            char *tmpPtr = strchr(name, '=');
+            if(tmpPtr != NULL) {
+                *tmpPtr = '\0';
+            }
             if(strcmp(name, FCGI_MAX_CONNS) == 0) {
                 value = '1';
             } else if(strcmp(name, FCGI_MAX_REQS) == 0) {
@@ -1483,16 +1509,17 @@ static int ProcessManagementRecord(int type, FCGX_Stream *stream)
         }
         len = responseP - &response[FCGI_HEADER_LEN];
         paddedLen = AlignInt8(len);
-        *((FCGI_Header *) response)
-            = MakeHeader(FCGI_GET_VALUES_RESULT, FCGI_NULL_REQUEST_ID,
-                         len, paddedLen - len);
+        FCGI_Header *header = (FCGI_Header *)response;
+        *header = MakeHeader(FCGI_GET_VALUES_RESULT, FCGI_NULL_REQUEST_ID,
+                             len, paddedLen - len);
         FreeParams(&paramsPtr);
     } else {
         paddedLen = len = sizeof(FCGI_UnknownTypeBody);
-        ((FCGI_UnknownTypeRecord *) response)->header
+        FCGI_UnknownTypeRecord *utr = (FCGI_UnknownTypeRecord *) response;
+        utr->header
             = MakeHeader(FCGI_UNKNOWN_TYPE, FCGI_NULL_REQUEST_ID,
                          len, 0);
-        ((FCGI_UnknownTypeRecord *) response)->body
+        utr->body
             = MakeUnknownTypeBody(type);
     }
     if (write_it_all(data->reqDataPtr->ipcFd, response, FCGI_HEADER_LEN + paddedLen) < 0) {

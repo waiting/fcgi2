@@ -18,10 +18,6 @@
 // implied; without even the implied warranty of MERCHANTABILITY or
 // FITNESS FOR A PARTICULAR PURPOSE.
 
-#ifdef _WIN32
-#define DLLAPI  __declspec(dllexport)
-#endif
-
 #include <stdio.h>
 #include <limits.h>
 #include "fcgio.h"
@@ -161,7 +157,6 @@ int fcgi_streambuf::attach(FCGX_Stream * fs)
 
 streamsize fcgi_streambuf::xsgetn(char_type * s, streamsize n) 
 {
-    if (n > INT_MAX) return 0;
     return (this->bufsize) 
         ? streambuf::xsgetn(s, n) 
         : (streamsize) FCGX_GetStr((char *) s, (int) n, this->fcgx);
@@ -169,7 +164,6 @@ streamsize fcgi_streambuf::xsgetn(char_type * s, streamsize n)
    
 streamsize fcgi_streambuf::xsputn(const char_type * s, streamsize n) 
 {
-    if (n > INT_MAX) return 0;
     return (this->bufsize) 
         ? streambuf::xsputn(s, n) 
         : (streamsize) FCGX_PutStr((char *) s, (int) n, this->fcgx);
