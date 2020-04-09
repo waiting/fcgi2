@@ -250,11 +250,11 @@ static int OS_BuildSockAddrUn(const char *bindPath,
     int bindPathLen = strlen(bindPath);
 
 #ifdef HAVE_SOCKADDR_UN_SUN_LEN /* 4.3BSD Reno and later: BSDI, DEC */
-    if(bindPathLen >= sizeof(servAddrPtr->sun_path)) {
+    if(bindPathLen >= (int)sizeof(servAddrPtr->sun_path)) {
         return -1;
     }
 #else                           /* 4.3 BSD Tahoe: Solaris, HPUX, DEC, ... */
-    if(bindPathLen > sizeof(servAddrPtr->sun_path)) {
+    if(bindPathLen > (int)sizeof(servAddrPtr->sun_path)) {
         return -1;
     }
 #endif
@@ -1189,7 +1189,7 @@ int OS_Accept(int listen_sock, int fail_on_intr, const char *webServerAddrs)
 #ifdef HAVE_SOCKLEN
                 socklen_t len = sizeof(sa);
 #else
-                int len = sizeof(sa);
+                unsigned int len = sizeof(sa);
 #endif
                 if (shutdownPending) break;
                 /* There's a window here */
@@ -1290,7 +1290,7 @@ int OS_IsFcgi(int sock)
 #ifdef HAVE_SOCKLEN
     socklen_t len = sizeof(sa);
 #else
-    int len = sizeof(sa);
+    unsigned int len = sizeof(sa);
 #endif
 
     errno = 0;

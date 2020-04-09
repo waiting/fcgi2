@@ -468,8 +468,8 @@ int FCGX_VFPrintF(FCGX_Stream *stream, const char *format, va_list arg)
                             fmtBuff[3] = (char) op;
                             fmtBuff[4] = '\0';
                             specifierLength = 4;
-                            break;
                         }
+			break;
 	            case 'L':
                     case 'h':
                         sizeModifier = op;
@@ -570,8 +570,8 @@ int FCGX_VFPrintF(FCGX_Stream *stream, const char *format, va_list arg)
                         if(*p == 'l' && *(p + 1) == 'l') {
                             sizeModifier = 'L';
                             CopyAndAdvance(&fmtBuffPtr, &p, 2);
-                            break;
                         }
+                        break;
                     case 'L':
                     case 'h':
                         sizeModifier = *p;
@@ -1474,13 +1474,14 @@ static void EmptyBuffProc(struct FCGX_Stream *stream, int doClose)
 static int ProcessManagementRecord(int type, FCGX_Stream *stream)
 {
     FCGX_Stream_Data *data = (FCGX_Stream_Data *)stream->data;
-    ParamsPtr paramsPtr = NewParams(3);
+    ParamsPtr paramsPtr;
     char **pPtr;
     char response[64]; /* 64 = 8 + 3*(1+1+14+1)* + padding */
     char *responseP = &response[FCGI_HEADER_LEN];
     char *name, value = '\0';
     int len, paddedLen;
     if(type == FCGI_GET_VALUES) {
+        paramsPtr = NewParams(3);
         ReadParams(paramsPtr, stream);
         if((FCGX_GetError(stream) != 0) || (data->contentLen != 0)) {
             FreeParams(&paramsPtr);
@@ -1714,7 +1715,7 @@ static void FillBuffProc(FCGX_Stream *stream)
         memcpy(((char *)(&header)) + headerLen, stream->rdNext, count);
         headerLen += count;
         stream->rdNext += count;
-        if(headerLen < sizeof(header)) {
+        if(headerLen < (int)sizeof(header)) {
             continue;
 	};
         headerLen = 0;

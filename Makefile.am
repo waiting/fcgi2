@@ -10,9 +10,19 @@ DISTCLEANFILES= compile config.guess config.sub configure depcomp fcgi_config.h.
 		aclocal.m4 m4/libtool.m4 m4/lt*.m4 Makefile.in install-sh missing ltmain.sh \
 		COPYING INSTALL
 
-SUBDIRS = libfcgi cgi-fcgi examples include
+SUBDIRS = libfcgi cgi-fcgi include
+
+if HAVE_EXAMPLES
+SUBDIRS += examples
+endif
 
 include_HEADERS = fcgi_config.h
+
+man_MANS=	doc/cgi-fcgi.1             \
+		doc/FCGI_Accept.3          \
+		doc/FCGI_Finish.3          \
+		doc/FCGI_SetExitStatus.3   \
+		doc/FCGI_StartFilterData.3
 
 pkgconfigdir = @pkgconfigdir@
 pkgconfig_DATA = fcgi.pc \

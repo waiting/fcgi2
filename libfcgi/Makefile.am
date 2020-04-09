@@ -1,7 +1,7 @@
 # $Id: Makefile.am,v 1.9 2001/12/22 03:16:20 robs Exp $
 
 INCLUDEDIR  = ../include
-AM_CPPFLAGS = -I$(top_srcdir)/include -W -Wall -pedantic
+AM_CPPFLAGS = -I$(top_srcdir)/include -W -Wall -pedantic -Wno-unused-parameter
 
 INCLUDE_FILES = $(INCLUDEDIR)/fastcgi.h     \
                 $(INCLUDEDIR)/fcgiapp.h     \
@@ -19,6 +19,7 @@ libfcgi_la_SOURCES = $(INCLUDE_FILES)  \
                      os_@SYSTEM@.c
 libfcgi_la_CC      = @PTHREAD_CC@
 libfcgi_la_CFLAGS  = @PTHREAD_CFLAGS@
+libfcgi_la_LIBADD  = -lm
 libfcgi_la_LDFLAGS = @EXTRA_LIBS@ -no-undefined
 
 libfcgi___la_SOURCES = $(INCLUDE_FILES)       \
